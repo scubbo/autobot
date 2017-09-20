@@ -29,12 +29,14 @@ if [[ -z $PROJECT_NAME ]]; then
   exit 1;
 fi
 
+ACCOUNT_ID=$(aws iam get-user | jq -r '.User .UserId');
+
 # Create Lambda Role
 LAMBDA_ROLE_NAME=$PROJECT_NAME"_lambda-role";
 LAMBDA_ROLE_ARN=$(aws iam list-roles | jq -r --arg ROLE_NAME $LAMBDA_ROLE_NAME '.Roles[] | select(.RoleName==$ROLE_NAME) | .Arn');
 if [[ -z $LAMBDA_ROLE_ARN ]]; then
   LAMBDA_ROLE_ARN=$(aws iam create-role --role-name $LAMBDA_ROLE_NAME --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"}}]}' --description "Created by $SCRIPT_NAME" | jq -r '.Role .Arn');
-  sleep 2; # https://stackoverflow.com/a/37438525/1040915 :(
+  sleep 5; # https://stackoverflow.com/a/37438525/1040915 :(
 fi
 
 # Create function
@@ -53,3 +55,38 @@ if [[ -z $LAMBDA_FUNCTION_ARN ]]; then
 fi
 
 # Create API
+API_NAME=$PROJECT_NAME"_api";
+API_ID=$(aws apigateway get-rest-apis | jq -r --arg API_NAME $API_NAME '.items[] | select(.name==$API_NAME) | .id');
+if [[ -z $API_ID ]]; then
+  API_ID=$(aws apigateway create-rest-api --name $API_NAME | jq -r '.id');
+fi
+
+ROOT_RESOURCE_ID=$(aws apigateway get-resources --rest-api-id $API_ID | jq -r '.items[] | select(.path=="/") | .id')
+RESOURCE_ID=$(aws apigateway get-resources --rest-api-id $API_ID | jq -r '.items[] | select(.path=="/slack") | .id')
+if [[ -z $RESOURCE_ID ]]; then
+  RESOURCE_ID=$(aws apigateway create-resource --rest-api-id $API_ID --parent-id $ROOT_RESOURCE_ID --path-part slack | jq -r '.id');
+fi
+
+# Need to temporarily disable the "if non-zero, then exit" behaviour (look for a "set -e", below)
+set +e
+aws apigateway get-method --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST >/dev/null 2>&1;
+# We don't get a "return" value, per se, but just check for succesful completion or not...
+if [[ $? -ne 0 ]]; then
+  aws apigateway put-method --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST --authorization-type NONE --no-api-key-required >/dev/null 2>&1;
+fi
+
+aws apigateway get-integration --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST >/dev/null 2>&1;
+# Ditto above re: return values
+if [[ $? -ne 0 ]]; then
+  # Yes, this assumes that we're in us-east-1, because 'MURICA
+  URI="arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:"$ACCOUNT_ID":function:"$LAMBDA_FUNCTION_NAME"/invocations";
+  aws apigateway put-integration --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST --integration-http-method POST --type AWS_PROXY --uri $URI >/dev/null 2>&1;
+fi
+
+aws apigateway get-method-response --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST --status-code 200 >/dev/null 2>&1;
+# And again
+if [[ $? -ne 0 ]]; then
+  aws apigateway put-method-response --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST --status-code 200 --response-models "{}" >/dev/null 2>&1;
+fi
+
+set -e
