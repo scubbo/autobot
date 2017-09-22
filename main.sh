@@ -89,4 +89,12 @@ if [[ $? -ne 0 ]]; then
   aws apigateway put-method-response --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST --status-code 200 --response-models "{}" >/dev/null 2>&1;
 fi
 
+# Grant permission for the APIGateway to call the Lambda function
+# With thanks to billjf of https://forums.aws.amazon.com/thread.jspa?threadID=217254&tstart=0
+STATEMENT_ID=$(cat /dev/urandom | od -vAn -N4 -tu4 | perl -pe 's/\s//g') # https://www.cyberciti.biz/faq/bash-shell-script-generating-random-numbers/
+aws add-permission --function-name $LAMBDA_FUNCTION_ARN --source-arn "arn:aws:execute-api:us-east-1:""$ACCOUNT_ID""$API_ID""/*/POST/slack" --principal apigateway.amazonaws.com --statement-id $STATEMENT_ID --action lambda:InvokeFunction
+
+# Make a test request against this endpoint
+curl "https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack"
+
 set -e
