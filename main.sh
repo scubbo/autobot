@@ -98,17 +98,33 @@ STATEMENT_ID=$(cat /dev/urandom | od -vAn -N4 -tu4 | perl -pe 's/\s//g') # https
 aws add-permission --function-name $LAMBDA_FUNCTION_ARN --source-arn "arn:aws:execute-api:us-east-1:""$ACCOUNT_ID""$API_ID""/*/POST/slack" --principal apigateway.amazonaws.com --statement-id $STATEMENT_ID --action lambda:InvokeFunction;
 
 # Make a test request against this endpoint
-RESPONSE_FROM_API=$(curl --silent -d '{"challenge":"abc123"}' "https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack")
+RESPONSE_FROM_API=$(curl --silent -d '{"challenge":"abc123"}' "https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack");
 if [[ $RESPONSE_FROM_API -ne "abc123" ]]; then
-  echo "Sorry, something went wrong. The deployed API didn't respond correctly to the issued challenge."
-  exit 1
+  echo "Sorry, something went wrong. The deployed API didn't respond correctly to the issued challenge.";
+  exit 1;
 fi
 
-echo "Now comes the manual bit (sorry!)"
-echo "Go to https://api.slack.com"
-echo "Click \"Your Apps\" in the top-right"
-echo "Click \"Create New App\""
-echo "Fill in whatever App Name you like, and pick your Workspace"
-echo "Under \"Event Subscriptions\", turn the slider to \"On\", then paste this into the Request Url: https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack"
+echo "Now comes the manual bit (sorry!)";
+echo "Go to https://api.slack.com";
+echo "Click \"Your Apps\" in the top-right";
+echo "Click \"Create New App\"";
+echo "Fill in whatever App Name you like, and pick your Workspace";
+echo "Go to \"OAuth & Permissions\", and, under Scopes, enter \"channels:history\" and \"groups:history\". Save Changes.";
+echo "Under \"Event Subscriptions\", turn the slider to \"On\", then paste this into the Request Url: \"https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack\". After a second or two, you should see a green \"Verified\".";
+echo "On the same page, under \"Subscribe to Workspace Events\", click \"Add Workspace Event\" and add \"message.channels\" and \"message.groups\"";
+echo "Save changes (in the bottom-right)";
+echo "Under \"Bot Users\", click \"Add a Bot User\", and fill in the values however you wish. Make sure to Save Changes when you're done.";
+echo "Go back to \"OAuth & Permissions\", click \"Install App to Workspace\", and click \"Authorize\"";
+echo "Copy the \"Bot User OAuth Access Token\", and enter it below (I encourage you to read the source of this script to ensure no shenanigans are going on!)"
+read BOT_ACCESS_TOKEN
+aws lambda update-function-configuration --function-name $LAMBDA_FUNCTION_ARN --environment "Variables={responseToken=$BOT_ACCESS_TOKEN}" >/dev/null;
+echo "One moment...making the bot's response a little more exciting..."
 
-# TODO next - OAuth (ugh)
+mv sampleHandler.py main.py
+zip --quiet lambda.zip main.py
+aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --zip-file fileb://lambda.zip >/dev/null
+rm lambda.zip
+mv main.py sampleHandler.py
+
+echo "OK, go to your Slack workspace, and post a message beginning with \"Hey Bot!\" in any public channel. You should get a response!";
+echo "OK, you're done! I hope this was fun and helpful! Check out the repo at https://github.com/scubbo/autobot, and please feel free to contact me (at scubbojj@gmail.com) with thoughts or comments";
