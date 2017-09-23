@@ -36,6 +36,8 @@ LAMBDA_ROLE_NAME=$PROJECT_NAME"_lambda-role";
 LAMBDA_ROLE_ARN=$(aws iam list-roles | jq -r --arg ROLE_NAME $LAMBDA_ROLE_NAME '.Roles[] | select(.RoleName==$ROLE_NAME) | .Arn');
 if [[ -z $LAMBDA_ROLE_ARN ]]; then
   LAMBDA_ROLE_ARN=$(aws iam create-role --role-name $LAMBDA_ROLE_NAME --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"}}]}' --description "Created by $SCRIPT_NAME" | jq -r '.Role .Arn');
+  # https://forums.aws.amazon.com/thread.jspa?threadID=179191
+  aws iam attach-role-policy --role-name $LAMBDA_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole";
   sleep 5; # https://stackoverflow.com/a/37438525/1040915 :(
 fi
 
@@ -43,15 +45,11 @@ fi
 LAMBDA_FUNCTION_NAME=$PROJECT_NAME"_lambda-function";
 LAMBDA_FUNCTION_ARN=$(aws lambda list-functions | jq -r --arg FUNCTION_NAME $LAMBDA_FUNCTION_NAME '.Functions[] | select(.FunctionName==$FUNCTION_NAME) | .FunctionArn');
 if [[ -z $LAMBDA_FUNCTION_ARN ]]; then
-  # Lambda creation requires a non-empty zip file
-  # TODO we can probably get rid of this altogether if we've already created a repo by this point
-  mkdir /tmp/"$PROJECT_NAME""_temp";
-  cd /tmp/"$PROJECT_NAME""_temp";
-  echo 'hello' >> foo
-  zip lambda.zip foo
+  mv initialHandler.py main.py
+  zip lambda.zip main.py
   LAMBDA_FUNCTION_ARN=$(aws lambda create-function --function-name $LAMBDA_FUNCTION_NAME --runtime python2.7 --role $LAMBDA_ROLE_ARN --zip-file fileb://lambda.zip --handler main.lambda_handler --description "Created by $SCRIPT_NAME" | jq -r '.FunctionArn');
-  cd -
-  rm -rf /tmp/"$PROJECT_NAME""_temp";
+  rm lambda.zip
+  mv main.py initialHandler.py
 fi
 
 # Create API
@@ -88,13 +86,29 @@ aws apigateway get-method-response --rest-api-id $API_ID --resource-id $RESOURCE
 if [[ $? -ne 0 ]]; then
   aws apigateway put-method-response --rest-api-id $API_ID --resource-id $RESOURCE_ID --http-method POST --status-code 200 --response-models "{}" >/dev/null 2>&1;
 fi
+# Back to die-on-error behaviour
+set -e
+
+# Deploy the API
+DEPLOYMENT_ID=$(aws apigateway create-deployment --rest-api-id $API_ID --stage-name prod | jq -r '.id');
 
 # Grant permission for the APIGateway to call the Lambda function
 # With thanks to billjf of https://forums.aws.amazon.com/thread.jspa?threadID=217254&tstart=0
 STATEMENT_ID=$(cat /dev/urandom | od -vAn -N4 -tu4 | perl -pe 's/\s//g') # https://www.cyberciti.biz/faq/bash-shell-script-generating-random-numbers/
-aws add-permission --function-name $LAMBDA_FUNCTION_ARN --source-arn "arn:aws:execute-api:us-east-1:""$ACCOUNT_ID""$API_ID""/*/POST/slack" --principal apigateway.amazonaws.com --statement-id $STATEMENT_ID --action lambda:InvokeFunction
+aws add-permission --function-name $LAMBDA_FUNCTION_ARN --source-arn "arn:aws:execute-api:us-east-1:""$ACCOUNT_ID""$API_ID""/*/POST/slack" --principal apigateway.amazonaws.com --statement-id $STATEMENT_ID --action lambda:InvokeFunction;
 
 # Make a test request against this endpoint
-curl "https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack"
+RESPONSE_FROM_API=$(curl --silent -d '{"challenge":"abc123"}' "https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack")
+if [[ $RESPONSE_FROM_API -ne "abc123" ]]; then
+  echo "Sorry, something went wrong. The deployed API didn't respond correctly to the issued challenge."
+  exit 1
+fi
 
-set -e
+echo "Now comes the manual bit (sorry!)"
+echo "Go to https://api.slack.com"
+echo "Click \"Your Apps\" in the top-right"
+echo "Click \"Create New App\""
+echo "Fill in whatever App Name you like, and pick your Workspace"
+echo "Under \"Event Subscriptions\", turn the slider to \"On\", then paste this into the Request Url: https://"$API_ID".execute-api.us-east-1.amazonaws.com/prod/slack"
+
+# TODO next - OAuth (ugh)
