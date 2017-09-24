@@ -2,34 +2,21 @@
 
 SCRIPT_NAME="AutoBot"
 
-# https://stackoverflow.com/a/14203146/1040915
-while [[ $# -gt 1 ]]
-do
-key="$1"
-case $key in
-    -n|--name)
-    PROJECT_NAME="$2"
-    shift # past argument
-    ;;
-    *)
-            # unknown option
-    ;;
-esac
-shift # past argument or value
-done
-
 # https://stackoverflow.com/a/677212/1040915
 hash jq 2>/dev/null || { echo >&2 "This script requires jq, but it's not installed.  Try getting it from https://github.com/stedolan/jq/wiki/Installation. Aborting."; exit 1; }
 hash aws 2>/dev/null || { echo >&2 "This script requires aws, but it's not installed.  Aborting."; exit 1; }
 
 set -e
 
+echo "Hi there! This script will walk you through the process of creating a Slackbot hosted on AWS";
+echo "First off, what's your project name? (We'll use this in naming of various resources). No whitespace allowed.";
+read -p ">>> " PROJECT_NAME;
 if [[ -z $PROJECT_NAME ]]; then
   echo "Expected to receive a value for -n/--name. Aborting";
   exit 1;
 fi
 
-echo "Working..."
+echo "OK! Working..."
 
 ACCOUNT_ID=$(aws iam get-user | jq -r '.User .UserId');
 
@@ -128,7 +115,7 @@ echo "Save changes (in the bottom-right)";
 echo "Under \"Bot Users\", click \"Add a Bot User\", and fill in the values however you wish. Make sure to Save Changes when you're done.";
 echo "Go back to \"OAuth & Permissions\", click \"Install App to Workspace\", and click \"Authorize\"";
 echo "Copy the \"Bot User OAuth Access Token\", and enter it below (I encourage you to read the source of this script to ensure no shenanigans are going on!)"
-read -p ">>>" BOT_ACCESS_TOKEN
+read -p ">>> " BOT_ACCESS_TOKEN
 aws lambda update-function-configuration --function-name $LAMBDA_FUNCTION_ARN --environment "Variables={responseToken=$BOT_ACCESS_TOKEN}" >/dev/null;
 echo "One moment...making the bot's response a little more exciting..."
 
@@ -141,6 +128,10 @@ mv main.py sampleHandler.py
 echo ""
 echo "OK, go to your Slack workspace, and post a message beginning with \"Hey Bot!\" in any public channel. You should get a response!";
 echo ""
+
+echo "Next, we're going to set up a CodePipeline, linked to a GitHub repo, so you can deploy your own code easily.";
+./createCodePipeline.sh -n $PROJECT_NAME
+
 echo "OK, you're done! I hope this was fun and helpful! Check out the repo at https://github.com/scubbo/autobot, and please feel free to contact me (at scubbojj@gmail.com) with thoughts or comments";
 echo ""
 echo "If you want to cleanup your AWS account, here are the commands to run:";
@@ -148,4 +139,7 @@ echo "aws iam detach-role-policy --role-name $LAMBDA_ROLE_NAME --policy-arn $LAM
 echo "aws iam delete-role --role-name $LAMBDA_ROLE_NAME";
 echo "aws lambda delete-function --function-name $LAMBDA_FUNCTION_ARN";
 echo "aws apigateway delete-rest-api --rest-api-id $API_ID";
+echo "aws iam detach-role-policy --role-name "$PROJECT_NAME"_cloudformation-role --policy-arn arn:aws:iam::aws:policy/AWSLambdaExecute";
+echo "aws iam delete-role --role-name "$PROJECT_NAME"_cloudformation-role":
+# TODO: do we also need to delete the custom-created policy, here, too?
 echo "(Remember to delete the Slack App, too, if you want!)";
