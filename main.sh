@@ -6,6 +6,12 @@ SCRIPT_NAME="AutoBot"
 hash jq 2>/dev/null || { echo >&2 "This script requires jq, but it's not installed.  Try getting it from https://github.com/stedolan/jq/wiki/Installation. Aborting."; exit 1; }
 hash aws 2>/dev/null || { echo >&2 "This script requires aws, but it's not installed.  Aborting."; exit 1; }
 
+RESPONSE_FROM_GITHUB=$(ssh -T git@github.com 2>&1 | grep '^Hi');
+if [[ -z $RESPOND_FROM_GITHUB ]]; then
+  echo "You don't appear to have a Github account accessible from ssh. This script currently requires one. Go to \"https://help.github.com/\" for more information.";
+  exit 1;
+fi
+
 set -e
 
 echo "Hi there! This script will walk you through the process of creating a Slackbot hosted on AWS";
@@ -142,4 +148,6 @@ echo "aws apigateway delete-rest-api --rest-api-id $API_ID";
 echo "aws iam detach-role-policy --role-name "$PROJECT_NAME"_cloudformation-role --policy-arn arn:aws:iam::aws:policy/AWSLambdaExecute";
 echo "aws iam delete-role --role-name "$PROJECT_NAME"_cloudformation-role":
 # TODO: do we also need to delete the custom-created policy, here, too?
+echo "aws s3api delete-bucket --bucket "$PROJECT_NAME"-s3-bucket";
+echo "aws codepipeline delete-pipeline --name "$PROJECT_NAME"_pipeline";
 echo "(Remember to delete the Slack App, too, if you want!)";

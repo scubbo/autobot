@@ -1,0 +1,95 @@
+{
+    "roleArn": "__ROLE_ARN__",
+    "stages": [
+        {
+            "name": "Source",
+            "actions": [
+                {
+                    "inputArtifacts": [],
+                    "name": "Source",
+                    "actionTypeId": {
+                        "category": "Source",
+                        "owner": "ThirdParty",
+                        "version": "1",
+                        "provider": "GitHub"
+                    },
+                    "outputArtifacts": [
+                        {
+                            "name": "__APP_NAME__"
+                        }
+                    ],
+                    "configuration": {
+                        "Owner": "__GITHUB_USER__",
+                        "Repo": "__GITHUB_REPO__",
+                        "Branch": "master",
+                        "OAuthToken": "__GITHUB_OAUTH_TOKEN__"
+                    },
+                    "runOrder": 1
+                }
+            ]
+        },
+        {
+            "name": "Build",
+            "actions": [
+                {
+                    "inputArtifacts": [
+                        {
+                            "name": "__APP_NAME__"
+                        }
+                    ],
+                    "name": "CodeBuild",
+                    "actionTypeId": {
+                        "category": "Build",
+                        "owner": "AWS",
+                        "version": "1",
+                        "provider": "CodeBuild"
+                    },
+                    "outputArtifacts": [
+                        {
+                            "name": "__BUILT_APP_NAME__"
+                        }
+                    ],
+                    "configuration": {
+                        "ProjectName": "__PROJECT_NAME__"
+                    },
+                    "runOrder": 1
+                }
+            ]
+        },
+        {
+            "name": "Staging",
+            "actions": [
+                {
+                    "inputArtifacts": [
+                        {
+                            "name": "__BUILT_APP_NAME__"
+                        }
+                    ],
+                    "name": "MyBetaStack",
+                    "actionTypeId": {
+                        "category": "Deploy",
+                        "owner": "AWS",
+                        "version": "1",
+                        "provider": "CloudFormation"
+                    },
+                    "outputArtifacts": [],
+                    "configuration": {
+                        "ActionMode": "CHANGE_SET_REPLACE",
+                        "ChangeSetName": "MyChangeSet",
+                        "RoleArn": "__ROLE_ARN_2__",
+                        "Capabilities": "CAPABILITY_IAM",
+                        "StackName": "MyBetaStack",
+                        "TemplatePath": "__BUILT_APP_NAME__::NewSamTemplate.yaml"
+                    },
+                    "runOrder": 1
+                }
+            ]
+        }
+    ],
+    "artifactStore": {
+        "type": "S3",
+        "location": "__BUCKET_NAME__"
+    },
+    "name": "__PIPELINE_NAME__",
+    "version": 3
+}
