@@ -50,7 +50,7 @@
                         }
                     ],
                     "configuration": {
-                        "ProjectName": "__PROJECT_NAME__"
+                        "ProjectName": "__CODE_BUILD_PROJECT_NAME__"
                     },
                     "runOrder": 1
                 }

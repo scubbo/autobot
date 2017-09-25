@@ -149,5 +149,9 @@ echo "aws iam detach-role-policy --role-name "$PROJECT_NAME"_cloudformation-role
 echo "aws iam delete-role --role-name "$PROJECT_NAME"_cloudformation-role":
 # TODO: do we also need to delete the custom-created policy, here, too?
 echo "aws s3api delete-bucket --bucket "$PROJECT_NAME"-s3-bucket";
+echo "aws iam delete-role --role-name "$PROJECT_NAME"_code-build-role";
+echo "aws codebuild delete-project --name "$PROJECT_NAME"_code-build-project";
 echo "aws codepipeline delete-pipeline --name "$PROJECT_NAME"_pipeline";
+echo "";
 echo "(Remember to delete the Slack App, too, if you want!)";
+echo "You may also wish to delete the KMS key that was created for CodeBuild, which would have name "$PROJECT_NAME"_code-build-kms-key - but that can't be done from the CLI";

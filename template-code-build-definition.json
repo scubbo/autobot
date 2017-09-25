@@ -1,0 +1,22 @@
+{
+  "name": "__CODE_BUILD_PROJECT_NAME__",
+  "description": "Created by __SCRIPT_NAME__",
+  "source": {
+    "type": "CODEPIPELINE"
+  },
+  "artifacts": {
+    "packaging": "NONE",
+    "type": "CODEPIPELINE",
+    "name": "__CODE_BUILD_ARTIFACT_NAME__"
+  },
+  "environment": {
+    "computeType": "BUILD_GENERAL1_SMALL",
+    "privilegedMode": false,
+    "image": "aws/codebuild/python:2.7.12",
+    "type": "LINUX_CONTAINER",
+    "environmentVariables": []
+  },
+  "serviceRole": "__CODE_BUILD_SERVICE_ROLE_ARN__",
+  "timeoutInMinutes": 60,
+  "tags": []
+}
