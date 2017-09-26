@@ -65,6 +65,8 @@ CODE_BUILD_ROLE_NAME=$PROJECT_NAME"_code-build-role";
 CODE_BUILD_SERVICE_ROLE_ARN=$(aws iam list-roles | jq -r --arg CODE_BUILD_ROLE_NAME $CODE_BUILD_ROLE_NAME '.Roles[] | select(.RoleName==$CODE_BUILD_ROLE_NAME) | .Arn');
 if [[ -z $CODE_BUILD_SERVICE_ROLE_ARN ]]; then
   CODE_BUILD_SERVICE_ROLE_ARN=$(aws iam create-role --role-name "$CODE_BUILD_ROLE_NAME" --path '/service-role/' --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"codebuild.amazonaws.com"}}]}' --description "Created by $SCRIPT_NAME" | jq -r '.Role .Arn');
+  aws iam attach-role-policy --role-name $CODE_BUILD_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" 2>&1 >/dev/null;
+  aws iam attach-role-policy --role-name $CODE_BUILD_ROLE_NAME --policy-arn "arn:aws:iam::aws:policy/AmazonS3FullAccess" 2>&1 >/dev/null;
   echo "Created CodeBuild role with name "$CODE_BUILD_ROLE_NAME;
 fi
 
