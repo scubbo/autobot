@@ -437,10 +437,8 @@
                         {
                             "StatusCode": 200
                         }
-                    ]
-                },
-                "RequestParameters": {
-                    "method.request.querystring.name": false
+                    ],
+                    "PassthroughBehavior": "WHEN_NO_MATCH"
                 },
                 "ResourceId": {
                     "Ref": "SlackResource"
@@ -535,8 +533,12 @@
     },
     "Outputs": {
         "AddressOutput": {
-            "Description": "Address of the Slack function",
+            "Description": "Address",
             "Value": {"Fn::Join": ["", ["https://", {"Ref": "Api"}, ".execute-api.", {"Ref": "AWS::Region"}, ".amazonaws.com/LATEST/slack"]]}
+        },
+        "LambdaOutput": {
+            "Description": "Lambda Function Name",
+            "Value": {"Fn::GetAtt": ["Lambda", "Arn"]}
         }
     }
 }
