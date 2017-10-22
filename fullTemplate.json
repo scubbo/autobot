@@ -1,0 +1,542 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "6befbfa1-e6ed-420c-874a-03b9ae448f23": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 630,
+                    "y": 131
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "06fd4f39-88a0-4b3c-a921-71d7a8b33ce3": {
+                "size": {
+                    "width": 230,
+                    "height": 210
+                },
+                "position": {
+                    "x": 70,
+                    "y": 160
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "936a199e-0ef9-448a-bdff-47fed8810a4c": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 447,
+                    "y": 31
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "6befbfa1-e6ed-420c-874a-03b9ae448f23"
+                ],
+                "isrelatedto": [
+                    "06fd4f39-88a0-4b3c-a921-71d7a8b33ce3"
+                ]
+            },
+            "3293712f-f8bd-49f1-8d08-dba8c4d7742d": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 240,
+                    "y": 50
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "06fd4f39-88a0-4b3c-a921-71d7a8b33ce3",
+                    "72a7f36d-655d-4126-84df-23cc4f15f036"
+                ],
+                "dependson": [
+                    "e5e697f4-4d09-479b-a0f9-2aca8d83b9bc"
+                ]
+            },
+            "e5e697f4-4d09-479b-a0f9-2aca8d83b9bc": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": -160,
+                    "y": 30
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "cd5bfcbd-c5dd-4229-9381-12130616a175"
+                ]
+            },
+            "cd5bfcbd-c5dd-4229-9381-12130616a175": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": -160,
+                    "y": 280
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "72a7f36d-655d-4126-84df-23cc4f15f036": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": -30,
+                    "y": 50
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "06fd4f39-88a0-4b3c-a921-71d7a8b33ce3"
+                ]
+            },
+            "6db85f27-5dbb-4be9-9ae1-4afbdc858e3c": {
+                "size": {
+                    "width": 140,
+                    "height": 140
+                },
+                "position": {
+                    "x": 509.9066610876536,
+                    "y": 292.9297400968
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "06fd4f39-88a0-4b3c-a921-71d7a8b33ce3"
+                ]
+            },
+            "988558ee-d57d-4f33-8725-18d710a21adb": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 214.98805075693681,
+                    "y": 382.43480994839786
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "6befbfa1-e6ed-420c-874a-03b9ae448f23"
+                ]
+            },
+            "afe1fb8d-6faf-41fb-9ddf-dceb34b33f46": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 550,
+                    "y": -60
+                },
+                "z": 0,
+                "embeds": [],
+                "dependson": [
+                    "936a199e-0ef9-448a-bdff-47fed8810a4c"
+                ],
+                "isrelatedto": [
+                    "6befbfa1-e6ed-420c-874a-03b9ae448f23"
+                ]
+            },
+            "a5618fb9-33eb-489f-b3b8-1dc09fdd398c": {
+                "source": {
+                    "id": "afe1fb8d-6faf-41fb-9ddf-dceb34b33f46"
+                },
+                "target": {
+                    "id": "936a199e-0ef9-448a-bdff-47fed8810a4c"
+                },
+                "z": 11
+            },
+            "1b8e946a-16fd-4ac7-b707-e9b175c20320": {
+                "source": {
+                    "id": "3293712f-f8bd-49f1-8d08-dba8c4d7742d"
+                },
+                "target": {
+                    "id": "e5e697f4-4d09-479b-a0f9-2aca8d83b9bc"
+                },
+                "z": 11
+            }
+        }
+    },
+    "Parameters": {
+      "paramScriptName": {
+        "Type": "String",
+        "Default": "AutoBot",
+        "Description": "The name of the script that created the resources"
+      },
+      "paramProjectName": {
+        "Type": "String",
+        "Description": "The name of the project. Used in naming Resources"
+      }
+    },
+    "Resources": {
+        "Api": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+                "Name": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "paramProjectName"
+                            },
+                            "_API"
+                        ]
+                    ]
+                },
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                },
+                "FailOnWarnings": true
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "06fd4f39-88a0-4b3c-a921-71d7a8b33ce3"
+                }
+            }
+        },
+        "LambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "Lambda",
+                        "Arn"
+                    ]
+                },
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:execute-api:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":",
+                            {
+                                "Ref": "Api"
+                            },
+                            "/*"
+                        ]
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "936a199e-0ef9-448a-bdff-47fed8810a4c"
+                }
+            }
+        },
+        "ApiStage": {
+            "Type": "AWS::ApiGateway::Stage",
+            "Properties": {
+                "DeploymentId": {
+                    "Ref": "ApiDeployment"
+                },
+                "MethodSettings": [
+                    {
+                        "DataTraceEnabled": true,
+                        "HttpMethod": "*",
+                        "LoggingLevel": "INFO",
+                        "ResourcePath": "/*"
+                    }
+                ],
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "StageName": "LATEST",
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "3293712f-f8bd-49f1-8d08-dba8c4d7742d"
+                }
+            },
+            "DependsOn": [
+                "ApiGatewayAccount"
+            ]
+        },
+        "ApiGatewayAccount": {
+            "Type": "AWS::ApiGateway::Account",
+            "Properties": {
+                "CloudWatchRoleArn": {
+                    "Fn::GetAtt": [
+                        "ApiGatewayCloudWatchLogsRole",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "e5e697f4-4d09-479b-a0f9-2aca8d83b9bc"
+                }
+            }
+        },
+        "ApiGatewayCloudWatchLogsRole": {
+            "Type": "AWS::IAM::Role",
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "cd5bfcbd-c5dd-4229-9381-12130616a175"
+                }
+            },
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "apigateway.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName": "ApiGatewayLogsPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:DescribeLogGroups",
+                                        "logs:DescribeLogStreams",
+                                        "logs:PutLogEvents",
+                                        "logs:GetLogEvents",
+                                        "logs:FilterLogEvents"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "ApiDeployment": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "DependsOn": ["SlackRequest"],
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "StageName": "DummyStage",
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "72a7f36d-655d-4126-84df-23cc4f15f036"
+                }
+            }
+        },
+        "SlackResource": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "ParentId": {
+                    "Fn::GetAtt": [
+                        "Api",
+                        "RootResourceId"
+                    ]
+                },
+                "PathPart": "slack"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6db85f27-5dbb-4be9-9ae1-4afbdc858e3c"
+                }
+            }
+        },
+        "SlackRequest": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "None",
+                "HttpMethod": "POST",
+                "Integration": {
+                    "Type": "AWS",
+                    "IntegrationHttpMethod": "POST",
+                    "Uri": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:aws:apigateway:",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ":lambda:path/2015-03-31/functions/",
+                                {
+                                    "Fn::GetAtt": [
+                                        "Lambda",
+                                        "Arn"
+                                    ]
+                                },
+                                "/invocations"
+                            ]
+                        ]
+                    },
+                    "IntegrationResponses": [
+                        {
+                            "StatusCode": 200
+                        }
+                    ]
+                },
+                "RequestParameters": {
+                    "method.request.querystring.name": false
+                },
+                "ResourceId": {
+                    "Ref": "SlackResource"
+                },
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "MethodResponses": [
+                    {
+                        "StatusCode": 200
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "afe1fb8d-6faf-41fb-9ddf-dceb34b33f46"
+                }
+            },
+            "DependsOn": [
+                "LambdaPermission"
+            ]
+        },
+        "LambdaCloudwatchRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "LambdaLogsPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:*"
+                                    ],
+                                    "Resource": "arn:aws:logs:*:*:*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Lambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "ZipFile" : {"Fn::Join": ["\n", [
+                        "def handler(event, context):",
+                        "  return 5*event['val']"
+                    ]]}
+                },
+                "Handler": "index.handler",
+                "Role": {"Fn::GetAtt": ["LambdaCloudwatchRole", "Arn"]},
+                "Runtime": "python2.7",
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6befbfa1-e6ed-420c-874a-03b9ae448f23"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AddressOutput": {
+            "Description": "Address of the Slack function",
+            "Value": {"Fn::Join": ["", ["https://", {"Ref": "Api"}, ".execute-api.", {"Ref": "AWS::Region"}, ".amazonaws.com/LATEST/slack"]]}
+        }
+    }
+}
