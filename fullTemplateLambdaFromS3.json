@@ -10,9 +10,13 @@
         "Type": "String",
         "Description": "The name of the project. Used in naming Resources"
       },
-      "paramLambdaArn": {
+      "lambdaS3Bucket": {
         "Type": "String",
-        "Description": "Arn of the Lambda function to expose"
+        "Description": "The Bucket in which Lambda function code is uploaded"
+      },
+      "lambdaS3Key": {
+        "Type": "String",
+        "Description": "The Key for the Lambda function code"
       }
     },
     "Resources": {
@@ -42,6 +46,39 @@
                     ]
                 },
                 "FailOnWarnings": true
+            }
+        },
+        "LambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "Lambda",
+                        "Arn"
+                    ]
+                },
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:execute-api:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":",
+                            {
+                                "Ref": "Api"
+                            },
+                            "/*"
+                        ]
+                    ]
+                }
             }
         },
         "ApiStage": {
@@ -187,7 +224,10 @@
                                 },
                                 ":lambda:path/2015-03-31/functions/",
                                 {
-                                    "Ref": "paramLambdaArn"
+                                    "Fn::GetAtt": [
+                                        "Lambda",
+                                        "Arn"
+                                    ]
                                 },
                                 "/invocations"
                             ]
@@ -211,13 +251,82 @@
                         "StatusCode": 200
                     }
                 ]
+            },
+            "DependsOn": [
+                "LambdaPermission"
+            ]
+        },
+        "LambdaCloudwatchRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "LambdaLogsPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:*"
+                                    ],
+                                    "Resource": "arn:aws:logs:*:*:*"
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
+        },
+        "Lambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {"Ref": "LambdaS3Bucket"},
+                    "S3Key": {"Ref": "LambdaS3Key"}
+                },
+                "Handler": "index.handler",
+                "Role": {"Fn::GetAtt": ["LambdaCloudwatchRole", "Arn"]},
+                "Runtime": "python2.7",
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                }
+            }`
         }
     },
     "Outputs": {
         "AddressOutput": {
             "Description": "Address",
             "Value": {"Fn::Join": ["", ["https://", {"Ref": "Api"}, ".execute-api.", {"Ref": "AWS::Region"}, ".amazonaws.com/LATEST/slack"]]}
+        },
+        "LambdaOutput": {
+            "Description": "Lambda Function Name",
+            "Value": {"Fn::GetAtt": ["Lambda", "Arn"]}
         }
     }
 }

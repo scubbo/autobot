@@ -13,8 +13,13 @@ echo "OK! Working...";
 
 STACK_NAME=$PROJECT_NAME"-stack";
 
-aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://fullTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=mytestproject --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
+BUCKET_NAME="temp-"$PROJECT_NAME"-AutoBot-bucket";
+aws s3api create-bucket --bucket $BUCKET_NAME >/dev/null;
+aws s3 cp initial-lambda-code.zip s3://$BUCKET_NAME/code.zip >/dev/null;
+aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://lambdaTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramS3Bucket,ParameterValue=$BUCKET_NAME ParameterKey=paramS3Key,ParameterValue=code.zip --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
 
+# Honestly, I know now that `aws cloudformation wait stack-create-complete` exists,
+# but I was so proud of this that I wanted to keep it.
 STACK_STATUS="Wanna Thank Your Mother For A Butt Like That";
 printf "Building your stack..";
 BUILDING_WAITS=0
@@ -28,12 +33,14 @@ while [ "$STACK_STATUS" != "CREATE_COMPLETE" ]; do
     exit 1;
   fi
 done
+aws s3 rm s3://$BUCKET_NAME/code.zip >/dev/null;
+aws s3api delete-bucket --bucket $BUCKET_NAME >/dev/null;
 
 CALL_URL=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.Description=="Address") | .OutputValue')
 echo
-if [ $(curl -s -d '{"val":3}' $CALL_URL) != "15" ]; then
+if [[ $(curl -s -d '{"val":3}' $CALL_URL) != "15" ]]; then
   echo "Whoops! Sorry. Something went wrong. To be quite honest, I'm not sure what - you should check your created resources and find out."
-  echo "(For your reference, I ran \`curl -s -d '{"val":3}' "$CALL_URL"\` and expected the response \`15\`)";
+  echo "(For your reference, I ran \`curl -s -d '{\"val\":3}' "$CALL_URL"\` and expected the response \`15\`)";
   exit 1;
 fi
 
@@ -49,7 +56,7 @@ echo "Click \"Your Apps\" in the top-right";
 echo "Click \"Create New App\"";
 echo "Fill in whatever App Name you like, and pick your Workspace";
 echo "Go to \"OAuth & Permissions\", and, under Scopes, enter \"channels:history\" and \"groups:history\". Save Changes.";
-echo "Under \"Event Subscriptions\", turn the slider to \"On\", then paste this into the Request Url:"$CALL_URL
+echo "Under \"Event Subscriptions\", turn the slider to \"On\", then paste this into the Request Url: "$CALL_URL
 echo "On the same page, under \"Subscribe to Workspace Events\", click \"Add Workspace Event\" and add \"message.channels\" and \"message.groups\"";
 echo "Save changes (in the bottom-right)";
 echo "Under \"Bot Users\", click \"Add a Bot User\", and fill in the values however you wish. Make sure to Save Changes when you're done.";
@@ -62,3 +69,40 @@ aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb:
 echo 
 echo "OK, go to your Slack workspace, and post a message beginning with \"Hey Bot!\" in any public channel. You should get a response!";
 echo 
+echo "============"
+echo
+echo "Now we're going to set up a Code Pipeline to update that function"
+
+GITHUB_USER=$(ssh -T git@github.com 2>&1 | perl -pe 's/Hi (.*?)!.*/$1/');
+# https://github.com/stelligent/dromedary
+echo "We need an OAuth token from GitHub to continue. Go to \"https://github.com/settings/tokens\", click \"Generate New Token\", enter a description, and select the scopes \"admin:repo_hook\" and \"repo\". Copy it below.";
+read -p ">>> " GITHUB_OAUTH_TOKEN;
+echo "And what's the name of the repo we should create?";
+read -p ">>> " GITHUB_REPO;
+# TODO: check whether this already exists
+
+echo "OK, creating that repo (GitHub will ask for your password in a second. Again, I encourage you to read the the source to satisfy yourself that nothing dodgy is going on!)"
+# Oh hey, I'm glad you're reading this!
+# https://stackoverflow.com/a/10325316/1040915
+# https://superuser.com/a/835589/184492
+curl -s -u "$GITHUB_USER" https://api.github.com/user/repos -d '{"name":"'"$GITHUB_REPO"'"}' >/dev/null
+
+TEMP_DIR_NAME="/tmp/autoBot-temp-"$PROJECT_NAME;
+mkdir $TEMP_DIR_NAME;
+cp sampleGitHubRepo.zip $TEMP_DIR_NAME
+pushd $TEMP_DIR_NAME >/dev/null;
+unzip sampleGitHubRepo.zip >/dev/null;
+rm sampleGitHubRepo.zip;
+git init >/dev/null;
+git add *
+git commit -m 'First commit' >/dev/null
+git remote add origin git@github.com:$GITHUB_USER/$GITHUB_REPO.git >/dev/null;
+git push origin master >/dev/null;
+popd >/dev/null;
+rm -rf $TEMP_DIR_NAME;
+
+PIPELINE_STACK_NAME=$PROJECT_NAME"-pipeline-stack";
+aws cloudformation create-stack --stack-name $PIPELINE_STACK_NAME --template-body file://pipelineTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramGithubRepo,ParameterValue=$GITHUB_REPO ParameterKey=paramGithubUser,ParameterValue=$GITHUB_USER ParameterKey=paramGithubOAuthToken,ParameterValue=$GITHUB_OAUTH_TOKEN --capabilities CAPABILITY_NAMED_IAM
+echo "Creating your pipeline stack..."
+aws cloudformation wait stack-create-complete
+echo "Done. You should now see that your Slack bot response (to \"Hey Bot!\") has changed from using \"friend\" to \"chum\". Nicolas Cage, however, remains as timeless, unchanging, and eternal as ever."
