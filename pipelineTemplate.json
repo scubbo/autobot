@@ -404,10 +404,11 @@
                                         {"Ref":"paramProjectName"},
                                         "-stack"
                                     ]]},
-                                    "TemplatePath": "built::outputTemplate.json",
+                                    "TemplatePath": "built::outputTemplate.yml",
                                     "ParameterOverrides": '{
                                         "paramS3Key": {"Fn::GetArtifactAtt": ["built", "ObjectKey"]},
-                                        "paramProjectName": {"Fn::Sub": "${paramProjectName}"}}
+                                        "paramProjectName": {"Fn::Sub": "${paramProjectName}"}},
+                                        "paramS3Bucket": { "Fn::GetArtifactAtt" : ["built", "BucketName"]}
                                     }'
                                 },
                                 "RunOrder": 1
