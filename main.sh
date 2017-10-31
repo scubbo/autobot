@@ -87,22 +87,37 @@ echo "OK, creating that repo (GitHub will ask for your password in a second. Aga
 # https://superuser.com/a/835589/184492
 curl -s -u "$GITHUB_USER" https://api.github.com/user/repos -d '{"name":"'"$GITHUB_REPO"'"}' >/dev/null
 
+# TODO: Check whether the bucket already exists. Preferably, earlier!
+PIPELINE_STACK_NAME=$PROJECT_NAME"-pipeline-stack";
+aws cloudformation create-stack --stack-name $PIPELINE_STACK_NAME --template-body file://pipelineTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramGithubRepo,ParameterValue=$GITHUB_REPO ParameterKey=paramGithubUser,ParameterValue=$GITHUB_USER ParameterKey=paramGithubOAuthToken,ParameterValue=$GITHUB_OAUTH_TOKEN --capabilities CAPABILITY_NAMED_IAM > /dev/null;
+echo "Creating your pipeline stack..."
+aws cloudformation wait stack-create-complete --stack-name $PIPELINE_STACK_NAME;
+echo "Done. Now populating your GitHub repo..."
+
+BUCKET_NAME=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $PIPELINE_STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.OutputKey="ArtifactsBucket") | .OutputValue')
+pushd sampleGithubRepo > /dev/null;
+# https://unix.stackexchange.com/a/92907/30828
+sed -e 's/{BUCKET-NAME}/'"$BUCKET_NAME"'/' buildspec.yml > buildspecTransformed.yml;
+mv buildspecTransformed.yml buildspec.yml;
+popd > /dev/null;
+
 TEMP_DIR_NAME="/tmp/autoBot-temp-"$PROJECT_NAME;
 mkdir $TEMP_DIR_NAME;
-cp sampleGitHubRepo.zip $TEMP_DIR_NAME
+cp sampleGithubRepo/* $TEMP_DIR_NAME;
 pushd $TEMP_DIR_NAME >/dev/null;
-unzip sampleGitHubRepo.zip >/dev/null;
-rm sampleGitHubRepo.zip;
 git init >/dev/null;
-git add *
+git add * > /dev/null;
 git commit -m 'First commit' >/dev/null
 git remote add origin git@github.com:$GITHUB_USER/$GITHUB_REPO.git >/dev/null;
-git push origin master >/dev/null;
+git push origin master 2>&1 >/dev/null;
 popd >/dev/null;
 rm -rf $TEMP_DIR_NAME;
 
-PIPELINE_STACK_NAME=$PROJECT_NAME"-pipeline-stack";
-aws cloudformation create-stack --stack-name $PIPELINE_STACK_NAME --template-body file://pipelineTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramGithubRepo,ParameterValue=$GITHUB_REPO ParameterKey=paramGithubUser,ParameterValue=$GITHUB_USER ParameterKey=paramGithubOAuthToken,ParameterValue=$GITHUB_OAUTH_TOKEN --capabilities CAPABILITY_NAMED_IAM
-echo "Creating your pipeline stack..."
-aws cloudformation wait stack-create-complete
-echo "Done. You should now see that your Slack bot response (to \"Hey Bot!\") has changed from using \"friend\" to \"chum\". Nicolas Cage, however, remains as timeless, unchanging, and eternal as ever."
+# Reset the buildspec.yml to have a placeholder
+pushd sampleGithubRepo > /dev/null;
+sed -e 's/'"$BUCKET_NAME"'/{BUCKET-NAME}/' buildspec.yml > buildspecReverted.yml;
+mv buildspecReverted.yml buildspec.yml;
+popd > /dev/null;
+
+echo "Your Github repo was created, and the change should be flowing through your CodePipeline.";
+echo "When it deploys, you should see that your Slack bot response (to \"Hey Bot!\") has changed from using \"friend\" to \"chum\". Nicolas Cage, however, remains as timeless, unchanging, and eternal as ever.";

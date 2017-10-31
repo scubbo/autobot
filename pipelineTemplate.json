@@ -406,8 +406,8 @@
                                     ]]},
                                     "TemplatePath": "built::outputTemplate.json",
                                     "ParameterOverrides": '{
-                                        "paramS3Bucket": {"Ref":"PipelineBucket"},
-                                        "paramS3Key": {"Fn::GetArtifactAtt": ["built", "ObjectKey"]}
+                                        "paramS3Key": {"Fn::GetArtifactAtt": ["built", "ObjectKey"]},
+                                        "paramProjectName": {"Fn::Sub": "${paramProjectName}"}}
                                     }'
                                 },
                                 "RunOrder": 1
@@ -415,6 +415,15 @@
                         ]
                     }
                 ]
+            }
+        }
+    },
+    "Outputs": {
+        "ArtifactsBucket": {
+            "Description": "S3 bucket holding all the OutputArtifacts of any pipeline stage",
+            "Value": {"Ref": "PipelineBucket"},
+            "Export": {
+                "Name": "AutoBot-pipeline-bucket"
             }
         }
     }
