@@ -9,6 +9,15 @@ set -e
 echo "Hi there! This script will walk you through the process of creating a Slackbot hosted on AWS";
 echo "First off, what's your project name? (We'll use this in naming of various resources). No whitespace or dodgy characters, please - alphanumeric only.";
 read -p ">>> " PROJECT_NAME;
+
+#TODO: get this working
+# https://stackoverflow.com/a/31077748/1040915
+#if aws s3 ls "s3://"$PROJECT_NAME"-bucket" 2>&1 | grep -q 'NoSuchBucket'
+#then
+#  echo "Sorry! An S3 bucket with corresponding name has already been taken. Try something else?";
+#  exit 1;
+#fi
+
 echo "OK! Working...";
 
 LAMBDA_STACK_NAME=$PROJECT_NAME"-lambda-stack";
@@ -17,6 +26,8 @@ BUCKET_NAME="temp-"$PROJECT_NAME"-AutoBot-bucket";
 aws s3api create-bucket --bucket $BUCKET_NAME >/dev/null;
 aws s3 cp initial-lambda-code.zip s3://$BUCKET_NAME/code.zip >/dev/null;
 aws cloudformation create-stack --stack-name $LAMBDA_STACK_NAME --template-body file://lambdaTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramS3Bucket,ParameterValue=$BUCKET_NAME ParameterKey=paramS3Key,ParameterValue=code.zip --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
+aws s3 rm s3://$BUCKET_NAME/code.zip >/dev/null;
+aws s3api delete-bucket --bucket $BUCKET_NAME >/dev/null;
 
 # Honestly, I know now that `aws cloudformation wait stack-create-complete` exists,
 # but I was so proud of this that I wanted to keep it.
@@ -134,7 +145,3 @@ popd > /dev/null;
 
 echo "Your Github repo was created, and the change should be flowing through your CodePipeline.";
 echo "When it deploys, you should see that your Slack bot response (to \"Hey Bot!\") has changed from using \"friend\" to \"chum\". Nicolas Cage, however, remains as timeless, unchanging, and eternal as ever.";
-
-# TODO - move this deletion as early as possible. Just keeping it here for rollbackability.
-aws s3 rm s3://$BUCKET_NAME/code.zip >/dev/null;
-aws s3api delete-bucket --bucket $BUCKET_NAME >/dev/null;

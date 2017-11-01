@@ -20,51 +20,28 @@
             "Type": "AWS::ApiGateway::RestApi",
             "Properties": {
                 "Name": {
-                    "Fn::Sub": "${paramProjectName}_API"
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "paramProjectName"
+                            },
+                            "_API"
+                        ]
+                    ]
                 },
                 "Description": {
-                    "Fn::Sub": "Created by ${paramScriptName}"
-                },
-                "FailOnWarnings": true,
-                "Body": {
-                    "swagger": "2.0",
-                    "info": {
-                        "version": "2016-08-18T18:08:34Z",
-                        "title": "Slack API"
-                    },
-                    "basePath": "/LATEST",
-                    "schemes": ["https"],
-                    "paths": {
-                        "/slack": {
-                            "post": {
-                                "parameters": [],
-                                "produces": ["application/json"],
-                                "responses": {
-                                    "200": {
-                                        "description": "200 response"
-                                    }
-                                },
-                                "x-amazon-apigateway-integration": {
-                                    "uri": {"Fn::Join": ["", [
-                                        "arn:aws:apigateway:",
-                                        {"Ref": "AWS::Region"},
-                                        ":lambda:path/2015/03/31/functions/",
-                                        {"Ref": "paramLambdaArn"},
-                                        "/invocations"
-                                    ]]},
-                                    "responses": {
-                                        "default": {
-                                            "statusCode": "200"
-                                        }
-                                    },
-                                    "httpMethod": "POST",
-                                    "type": "aws",
-                                    "passthroughBehavior": "when_no_match"
-                                }
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
                             }
-                        }
-                    }
-                }
+                        ]
+                    ]
+                },
+                "FailOnWarnings": true
             }
         },
         "LambdaPermission": {
@@ -72,7 +49,7 @@
             "Properties": {
                 "Action": "lambda:invokeFunction",
                 "FunctionName": {
-                    "Ref":"paramLambdaArn"
+                    "Ref": "paramLambdaArn"
                 },
                 "Principal": "apigateway.amazonaws.com",
                 "SourceArn": {
@@ -116,7 +93,15 @@
                 },
                 "StageName": "LATEST",
                 "Description": {
-                    "Fn::Sub": "Created by ${paramScriptName}"
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
                 }
             },
             "DependsOn": [
@@ -180,17 +165,97 @@
         },
         "ApiDeployment": {
             "Type": "AWS::ApiGateway::Deployment",
-            "DependsOn": ["Api"],
+            "DependsOn": ["SlackRequest"],
             "Properties": {
                 "RestApiId": {
                     "Ref": "Api"
                 },
                 "StageName": "DummyStage",
                 "Description": {
-                    "Fn::Sub": "Created by ${paramScriptName}"
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
                 }
             }
-        }
+        },
+        "SlackResource": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "ParentId": {
+                    "Fn::GetAtt": [
+                        "Api",
+                        "RootResourceId"
+                    ]
+                },
+                "PathPart": "slack"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6db85f27-5dbb-4be9-9ae1-4afbdc858e3c"
+                }
+            }
+        },
+        "SlackRequest": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+                "AuthorizationType": "None",
+                "HttpMethod": "POST",
+                "Integration": {
+                    "Type": "AWS",
+                    "IntegrationHttpMethod": "POST",
+                    "Uri": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:aws:apigateway:",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                ":lambda:path/2015-03-31/functions/",
+                                {
+                                    "Ref":"paramLambdaArn"
+                                },
+                                "/invocations"
+                            ]
+                        ]
+                    },
+                    "IntegrationResponses": [
+                        {
+                            "StatusCode": 200
+                        }
+                    ],
+                    "PassthroughBehavior": "WHEN_NO_MATCH"
+                },
+                "ResourceId": {
+                    "Ref": "SlackResource"
+                },
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "MethodResponses": [
+                    {
+                        "StatusCode": 200
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "afe1fb8d-6faf-41fb-9ddf-dceb34b33f46"
+                }
+            },
+            "DependsOn": [
+                "LambdaPermission"
+            ]
+        },
     },
     "Outputs": {
         "AddressOutput": {

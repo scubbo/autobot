@@ -281,7 +281,7 @@
                                     "Effect": "Allow"
                                 },
                                 {
-                                    "Action": ["iam:AttachRolePolicy","iam:DetahRolePolicy"],
+                                    "Action": ["iam:AttachRolePolicy","iam:DetachRolePolicy","iam:PutRolePolicy"],
                                     "Resource": {"Fn::Join": ["", [
                                         "arn:aws:iam::",
                                         {"Ref": "AWS::AccountId"},
@@ -402,7 +402,7 @@
                                     "Capabilities": "CAPABILITY_IAM",
                                     "StackName": {"Fn::Join": ["", [
                                         {"Ref":"paramProjectName"},
-                                        "-stack"
+                                        "-lambda-stack"
                                     ]]},
                                     "TemplatePath": "built::outputTemplate.yml",
                                     "ParameterOverrides": {"Fn::Join": ["", [
