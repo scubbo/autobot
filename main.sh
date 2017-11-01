@@ -99,8 +99,6 @@ pushd sampleGithubRepo > /dev/null;
 # https://unix.stackexchange.com/a/92907/30828
 sed -e 's/{BUCKET-NAME}/'"$BUCKET_NAME"'/' buildspec.yml > buildspecTransformed.yml;
 mv buildspecTransformed.yml buildspec.yml;
-sed -e 's/{PROJECT-NAME}/'"$PROJECT_NAME"'/' params.json > paramsTransformed.json;
-mv paramsTransformed.json params.json;
 popd > /dev/null;
 
 TEMP_DIR_NAME="/tmp/autoBot-temp-"$PROJECT_NAME;

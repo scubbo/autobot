@@ -405,11 +405,13 @@
                                         "-stack"
                                     ]]},
                                     "TemplatePath": "built::outputTemplate.yml",
-                                    "ParameterOverrides": '{
+                                    "ParameterOverrides": {"Fn::Join": ["", [
+                                        '{
                                         "paramS3Key": {"Fn::GetArtifactAtt": ["built", "ObjectKey"]},
-                                        "paramProjectName": {"Fn::Sub": "${paramProjectName}"}},
-                                        "paramS3Bucket": { "Fn::GetArtifactAtt" : ["built", "BucketName"]}
-                                    }'
+                                        "paramProjectName": "',
+                                        {"Ref":"paramProjectName"},
+                                        '","paramS3Bucket": { "Fn::GetArtifactAtt" : ["built", "BucketName"]}
+                                    }']]}
                                 },
                                 "RunOrder": 1
                             }

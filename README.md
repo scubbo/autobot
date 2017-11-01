@@ -8,3 +8,5 @@ TODO: having a static name for the pipeline bucket means can't have two such pip
 
 BUG: Apparently you can't --use-json in a cloudformation YAML template?
 BUG: http://docs.aws.amazon.com/lambda/latest/dg/automating-deployment.html doesn't seem to be accurate? If you don't include index.py in the output file, it won't be included in the deployment package
+
+https://blog.jayway.com/2016/09/18/introduction-swagger-cloudformation-api-gateway/ helped me convert to Swagger
