@@ -10,225 +10,16 @@
         "Type": "String",
         "Description": "The name of the project. Used in naming Resources"
       },
-      "paramS3Key": {
+      "paramS3Bucket": {
         "Type": "String",
         "Description": "Part of the location of the Lambda code"
       },
-      "paramS3Bucket": {
+      "paramS3Key": {
         "Type": "String",
         "Description": "Part of the location of the Lambda code"
       }
     },
     "Resources": {
-        "Api": {
-            "Type": "AWS::ApiGateway::RestApi",
-            "Properties": {
-                "Name": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            {
-                                "Ref": "paramProjectName"
-                            },
-                            "_API"
-                        ]
-                    ]
-                },
-                "Description": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "Created by ",
-                            {
-                                "Ref": "paramScriptName"
-                            }
-                        ]
-                    ]
-                },
-                "FailOnWarnings": true,
-                "Body": {
-                    "swagger": "2.0",
-                    "info": {
-                        "version": "2016-08-18T18:08:34Z",
-                        "title": "Slack API"
-                    },
-                    "basePath": "/LATEST",
-                    "schemes": ["https"],
-                    "paths": {
-                        "/slack": {
-                            "post": {
-                                "parameters": [],
-                                "produces": ["application/json"],
-                                "responses": {
-                                    "200": {
-                                        "description": "200 response"
-                                    }
-                                },
-                                "x-amazon-apigateway-integration": {
-                                    "uri": {"Fn::Join": ["", [
-                                        "arn:aws:apigateway:",
-                                        {"Ref": "AWS::Region"},
-                                        ":lambda:path/2015/03/31/functions/",
-                                        {"Fn::GetAtt": ["Lambda", "Arn"]},
-                                        "/invocations"
-                                    ]]},
-                                    "responses": {
-                                        "default": {
-                                            "statusCode": "200"
-                                        }
-                                    },
-                                    "httpMethod": "POST",
-                                    "type": "aws"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "ApiStage": {
-            "Type": "AWS::ApiGateway::Stage",
-            "Properties": {
-                "DeploymentId": {
-                    "Ref": "ApiDeployment"
-                },
-                "MethodSettings": [
-                    {
-                        "DataTraceEnabled": true,
-                        "HttpMethod": "*",
-                        "LoggingLevel": "INFO",
-                        "ResourcePath": "/*"
-                    }
-                ],
-                "RestApiId": {
-                    "Ref": "Api"
-                },
-                "StageName": "LATEST",
-                "Description": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "Created by ",
-                            {
-                                "Ref": "paramScriptName"
-                            }
-                        ]
-                    ]
-                }
-            },
-            "DependsOn": [
-                "ApiGatewayAccount"
-            ]
-        },
-        "ApiGatewayAccount": {
-            "Type": "AWS::ApiGateway::Account",
-            "Properties": {
-                "CloudWatchRoleArn": {
-                    "Fn::GetAtt": [
-                        "ApiGatewayCloudWatchLogsRole",
-                        "Arn"
-                    ]
-                }
-            }
-        },
-        "ApiGatewayCloudWatchLogsRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": [
-                                    "apigateway.amazonaws.com"
-                                ]
-                            },
-                            "Action": [
-                                "sts:AssumeRole"
-                            ]
-                        }
-                    ]
-                },
-                "Policies": [
-                    {
-                        "PolicyName": "ApiGatewayLogsPolicy",
-                        "PolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "logs:CreateLogGroup",
-                                        "logs:CreateLogStream",
-                                        "logs:DescribeLogGroups",
-                                        "logs:DescribeLogStreams",
-                                        "logs:PutLogEvents",
-                                        "logs:GetLogEvents",
-                                        "logs:FilterLogEvents"
-                                    ],
-                                    "Resource": "*"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "ApiDeployment": {
-            "Type": "AWS::ApiGateway::Deployment",
-            "DependsOn": ["Api"],
-            "Properties": {
-                "RestApiId": {
-                    "Ref": "Api"
-                },
-                "StageName": "DummyStage",
-                "Description": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "Created by ",
-                            {
-                                "Ref": "paramScriptName"
-                            }
-                        ]
-                    ]
-                }
-            }
-        },
-        "LambdaPermission": {
-            "Type": "AWS::Lambda::Permission",
-            "Properties": {
-                "Action": "lambda:invokeFunction",
-                "FunctionName": {
-                    "Fn::GetAtt": [
-                        "Lambda",
-                        "Arn"
-                    ]
-                },
-                "Principal": "apigateway.amazonaws.com",
-                "SourceArn": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "arn:aws:execute-api:",
-                            {
-                                "Ref": "AWS::Region"
-                            },
-                            ":",
-                            {
-                                "Ref": "AWS::AccountId"
-                            },
-                            ":",
-                            {
-                                "Ref": "Api"
-                            },
-                            "/*"
-                        ]
-                    ]
-                }
-            }
-        },
         "LambdaCloudwatchRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -296,6 +87,7 @@
         "LambdaOutput": {
             "Description": "Lambda Function Name",
             "Value": {"Fn::GetAtt": ["Lambda", "Arn"]}
-        }
+        },
+
     }
 }

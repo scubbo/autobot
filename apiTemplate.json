@@ -1,0 +1,201 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "paramScriptName": {
+            "Type": "String",
+            "Default": "AutoBot",
+            "Description": "The name of the script that created the resources"
+        },
+        "paramProjectName": {
+            "Type": "String",
+            "Description": "The name of the project. Used in naming Resources"
+        },
+        "paramLambdaArn": {
+            "Type": "String",
+            "Description": "The ARN of the Lambda function this API fronts"
+        }
+    },
+    "Resources": {
+        "Api": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+                "Name": {
+                    "Fn::Sub": "${paramProjectName}_API"
+                },
+                "Description": {
+                    "Fn::Sub": "Created by ${paramScriptName}"
+                },
+                "FailOnWarnings": true,
+                "Body": {
+                    "swagger": "2.0",
+                    "info": {
+                        "version": "2016-08-18T18:08:34Z",
+                        "title": "Slack API"
+                    },
+                    "basePath": "/LATEST",
+                    "schemes": ["https"],
+                    "paths": {
+                        "/slack": {
+                            "post": {
+                                "parameters": [],
+                                "produces": ["application/json"],
+                                "responses": {
+                                    "200": {
+                                        "description": "200 response"
+                                    }
+                                },
+                                "x-amazon-apigateway-integration": {
+                                    "uri": {"Fn::Join": ["", [
+                                        "arn:aws:apigateway:",
+                                        {"Ref": "AWS::Region"},
+                                        ":lambda:path/2015/03/31/functions/",
+                                        {"Ref": "paramLambdaArn"},
+                                        "/invocations"
+                                    ]]},
+                                    "responses": {
+                                        "default": {
+                                            "statusCode": "200"
+                                        }
+                                    },
+                                    "httpMethod": "POST",
+                                    "type": "aws",
+                                    "passthroughBehavior": "when_no_match"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "LambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {
+                    "Ref":"paramLambdaArn"
+                },
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:execute-api:",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ":",
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":",
+                            {
+                                "Ref": "Api"
+                            },
+                            "/*"
+                        ]
+                    ]
+                }
+            }
+        },
+        "ApiStage": {
+            "Type": "AWS::ApiGateway::Stage",
+            "Properties": {
+                "DeploymentId": {
+                    "Ref": "ApiDeployment"
+                },
+                "MethodSettings": [
+                    {
+                        "DataTraceEnabled": true,
+                        "HttpMethod": "*",
+                        "LoggingLevel": "INFO",
+                        "ResourcePath": "/*"
+                    }
+                ],
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "StageName": "LATEST",
+                "Description": {
+                    "Fn::Sub": "Created by ${paramScriptName}"
+                }
+            },
+            "DependsOn": [
+                "ApiGatewayAccount"
+            ]
+        },
+        "ApiGatewayAccount": {
+            "Type": "AWS::ApiGateway::Account",
+            "Properties": {
+                "CloudWatchRoleArn": {
+                    "Fn::GetAtt": [
+                        "ApiGatewayCloudWatchLogsRole",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "ApiGatewayCloudWatchLogsRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "apigateway.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName": "ApiGatewayLogsPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:DescribeLogGroups",
+                                        "logs:DescribeLogStreams",
+                                        "logs:PutLogEvents",
+                                        "logs:GetLogEvents",
+                                        "logs:FilterLogEvents"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "ApiDeployment": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "DependsOn": ["Api"],
+            "Properties": {
+                "RestApiId": {
+                    "Ref": "Api"
+                },
+                "StageName": "DummyStage",
+                "Description": {
+                    "Fn::Sub": "Created by ${paramScriptName}"
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "AddressOutput": {
+            "Description": "Address",
+            "Value": {"Fn::Join": ["", ["https://", {"Ref": "Api"}, ".execute-api.", {"Ref": "AWS::Region"}, ".amazonaws.com/LATEST/slack"]]}
+        }
+    }
+}

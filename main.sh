@@ -11,12 +11,12 @@ echo "First off, what's your project name? (We'll use this in naming of various 
 read -p ">>> " PROJECT_NAME;
 echo "OK! Working...";
 
-STACK_NAME=$PROJECT_NAME"-stack";
+LAMBDA_STACK_NAME=$PROJECT_NAME"-lambda-stack";
 
 BUCKET_NAME="temp-"$PROJECT_NAME"-AutoBot-bucket";
 aws s3api create-bucket --bucket $BUCKET_NAME >/dev/null;
 aws s3 cp initial-lambda-code.zip s3://$BUCKET_NAME/code.zip >/dev/null;
-aws cloudformation create-stack --stack-name $STACK_NAME --template-body file://lambdaTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramS3Bucket,ParameterValue=$BUCKET_NAME ParameterKey=paramS3Key,ParameterValue=code.zip --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
+aws cloudformation create-stack --stack-name $LAMBDA_STACK_NAME --template-body file://lambdaTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramS3Bucket,ParameterValue=$BUCKET_NAME ParameterKey=paramS3Key,ParameterValue=code.zip --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
 
 # Honestly, I know now that `aws cloudformation wait stack-create-complete` exists,
 # but I was so proud of this that I wanted to keep it.
@@ -26,29 +26,42 @@ BUILDING_WAITS=0
 while [ "$STACK_STATUS" != "CREATE_COMPLETE" ]; do
   printf ".";
   sleep 2;
-  STACK_STATUS=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .StackStatus');
+  STACK_STATUS=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $LAMBDA_STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .StackStatus');
   let BUILDING_WAITS+=1;
   if [ $BUILDING_WAITS -gt 30 ] || [ "$STACK_STATUS" == "ROLLBACK_IN_PROGRESS" ]; then
     echo "Looks like something went wrong while building your stack. Check the AWS Console to find out what.";
     exit 1;
   fi
 done
-aws s3 rm s3://$BUCKET_NAME/code.zip >/dev/null;
-aws s3api delete-bucket --bucket $BUCKET_NAME >/dev/null;
 
-CALL_URL=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.Description=="Address") | .OutputValue')
+echo;
+LAMBDA_ARN=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $LAMBDA_STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.OutputKey=="LambdaOutput") | .OutputValue');
+aws lambda invoke --function-name $LAMBDA_ARN --payload '{"val":3}' outfile.txt >/dev/null;
+returnVal=$(<outfile.txt);
+if [[ $returnVal != "15" ]]; then
+  echo "Whoops! Sorry. Something went wrong. To be quite honest, I'm not sure what - you should check your created resources and find out.";
+  echo "(For your reference, I ran \`aws lambda invoke --function-name "$LAMBDA_ARN" --payload '{\"val\":3}' outfile.txt\` and expected the response \`15\`)";
+  exit 1;
+fi
+rm outfile.txt;
+
+echo "OK, sweet! You have a working Lambda function. Let's wrap it in an API!";
 echo
+
+API_STACK_NAME=$PROJECT_NAME"-api-stack";
+aws cloudformation create-stack --stack-name $API_STACK_NAME --template-body file://apiTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramLambdaArn,ParameterValue=$LAMBDA_ARN --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
+aws cloudformation wait stack-create-complete --stack-name $API_STACK_NAME;
+CALL_URL=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $API_STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.Description=="Address") | .OutputValue')
 if [[ $(curl -s -d '{"val":3}' $CALL_URL) != "15" ]]; then
-  echo "Whoops! Sorry. Something went wrong. To be quite honest, I'm not sure what - you should check your created resources and find out."
-  echo "(For your reference, I ran \`curl -s -d '{\"val\":3}' "$CALL_URL"\` and expected the response \`15\`)";
+  echo "Whoops! Sorry. Something went wrong. To be quite honest, I'm not sure what - you should check your created resources and find out.";
+  echo "(For your reference, I ran \`curl -s -d  '{\"val\":3}' "$CALL_URL"\` and expected the response \`15\`)";
   exit 1;
 fi
 
-echo "OK, sweet! Your stack is all set up and appears to be responding correctly. Now to set it up to handle Slack traffic";
-echo
+echo "Cool! Your function is set up and responding to HTTP requests. Let's set it up to validate with Slack!";
+echo;
 
-FUNCTION_NAME=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.Description=="Lambda Function Name") | .OutputValue');
-aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb://slack-response-code.zip > /dev/null # Intentionally not routing stderr there in case something goes wrong
+aws lambda update-function-code --function-name $LAMBDA_ARN --zip-file fileb://slack-response-code.zip > /dev/null # Intentionally not routing stderr there in case something goes wrong
 
 echo "Now comes the manual bit (sorry!)";
 echo "Go to https://api.slack.com";
@@ -63,9 +76,9 @@ echo "Under \"Bot Users\", click \"Add a Bot User\", and fill in the values howe
 echo "Go back to \"OAuth & Permissions\", click \"Install App to Workspace\", and click \"Authorize\"";
 echo "Copy the \"Bot User OAuth Access Token\", and enter it below (I encourage you to read the source of this script to ensure no shenanigans are going on!)"
 read -p ">>> " BOT_ACCESS_TOKEN
-aws lambda update-function-configuration --function-name $FUNCTION_NAME --environment "Variables={responseToken=$BOT_ACCESS_TOKEN}" >/dev/null;
+aws lambda update-function-configuration --function-name $LAMBDA_ARN --environment "Variables={responseToken=$BOT_ACCESS_TOKEN}" >/dev/null;
 echo "One moment...making the bot's response a little more exciting..."
-aws lambda update-function-code --function-name $FUNCTION_NAME --zip-file fileb://slack-initial-bot-code.zip >/dev/null
+aws lambda update-function-code --function-name $LAMBDA_ARN --zip-file fileb://slack-initial-bot-code.zip >/dev/null
 echo 
 echo "OK, go to your Slack workspace, and post a message beginning with \"Hey Bot!\" in any public channel. You should get a response!";
 echo 
@@ -121,3 +134,7 @@ popd > /dev/null;
 
 echo "Your Github repo was created, and the change should be flowing through your CodePipeline.";
 echo "When it deploys, you should see that your Slack bot response (to \"Hey Bot!\") has changed from using \"friend\" to \"chum\". Nicolas Cage, however, remains as timeless, unchanging, and eternal as ever.";
+
+# TODO - move this deletion as early as possible. Just keeping it here for rollbackability.
+aws s3 rm s3://$BUCKET_NAME/code.zip >/dev/null;
+aws s3api delete-bucket --bucket $BUCKET_NAME >/dev/null;
