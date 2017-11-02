@@ -189,7 +189,18 @@
                 "RoleName": {"Fn::Join": ["", [
                     {"Ref": "paramProjectName"},
                     "_code-build-role"
-                ]]}
+                ]]},
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                }
             }
         },
         "CodeBuildProject": {

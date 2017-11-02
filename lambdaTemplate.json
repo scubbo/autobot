@@ -56,7 +56,18 @@
                             ]
                         }
                     }
-                ]
+                ],
+                "Description": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "Created by ",
+                            {
+                                "Ref": "paramScriptName"
+                            }
+                        ]
+                    ]
+                }
             }
         },
         "Lambda": {
