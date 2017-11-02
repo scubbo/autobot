@@ -10,3 +10,5 @@ BUG: Apparently you can't --use-json in a cloudformation YAML template?
 BUG: http://docs.aws.amazon.com/lambda/latest/dg/automating-deployment.html doesn't seem to be accurate? If you don't include index.py in the output file, it won't be included in the deployment package
 
 https://blog.jayway.com/2016/09/18/introduction-swagger-cloudformation-api-gateway/ helped me convert to Swagger
+
+Intentionally hardcode GITHUB_REPO to PROJECT_NAME because ain't nobody got time for more prompts (also it allowed me to do repo-existence checking up-front, rather than asking for github repo names at a weird time)
