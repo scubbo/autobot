@@ -56,18 +56,7 @@
                             ]
                         }
                     }
-                ],
-                "Description": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "Created by ",
-                            {
-                                "Ref": "paramScriptName"
-                            }
-                        ]
-                    ]
-                }
+                ]
             }
         },
         "Lambda": {
@@ -98,7 +87,6 @@
         "LambdaOutput": {
             "Description": "Lambda Function Name",
             "Value": {"Fn::GetAtt": ["Lambda", "Arn"]}
-        },
-
+        }
     }
 }

@@ -33,8 +33,6 @@ TEMP_BUCKET_NAME="temp-"$PROJECT_NAME"-AutoBot-bucket";
 aws s3api create-bucket --bucket $TEMP_BUCKET_NAME >/dev/null;
 aws s3 cp lambdas/initial-lambda-code.zip s3://$TEMP_BUCKET_NAME/code.zip >/dev/null;
 aws cloudformation create-stack --stack-name $LAMBDA_STACK_NAME --template-body file://templates/lambdaTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramS3Bucket,ParameterValue=$TEMP_BUCKET_NAME ParameterKey=paramS3Key,ParameterValue=code.zip --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
-aws s3 rm s3://$TEMP_BUCKET_NAME/code.zip >/dev/null;
-aws s3api delete-bucket --bucket $TEMP_BUCKET_NAME >/dev/null;
 
 # Honestly, I know now that `aws cloudformation wait stack-create-complete` exists,
 # but I was so proud of this that I wanted to keep it.
@@ -51,6 +49,10 @@ while [ "$STACK_STATUS" != "CREATE_COMPLETE" ]; do
     exit 1;
   fi
 done
+
+# Cleanup the bucket that we used temporarily
+aws s3 rm s3://$TEMP_BUCKET_NAME/code.zip >/dev/null;
+aws s3api delete-bucket --bucket $TEMP_BUCKET_NAME >/dev/null;
 
 echo;
 LAMBDA_ARN=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $LAMBDA_STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.OutputKey=="LambdaOutput") | .OutputValue');

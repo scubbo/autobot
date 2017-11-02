@@ -160,18 +160,7 @@
                             ]
                         }
                     }
-                ],
-                "Description": {
-                    "Fn::Join": [
-                        "",
-                        [
-                            "Created by ",
-                            {
-                                "Ref": "paramScriptName"
-                            }
-                        ]
-                    ]
-                }
+                ]
             }
         },
         "ApiDeployment": {
