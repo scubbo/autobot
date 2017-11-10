@@ -1,10 +1,10 @@
-== Autobot ==
+## Autobot
 
 A (nearly-fully) automated way to set up a Slackbot (Unfortunately, Slack API has no API of its own, and generating OAuth Access Tokens pretty much requires a web browser and user input)
 
 As a next step, I'd love to provide a library of common responders (e.g. things that search for a particular word/phrase and reply randomly from a set of responses), but I'm trying to "publish early, publish often".
 
-== References ==
+## References
 
 Cloudformation version based primarily off of https://blog.jayway.com/2016/08/17/introduction-to-cloudformation-for-api-gateway/
 
