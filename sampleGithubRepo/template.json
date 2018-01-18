@@ -66,7 +66,7 @@
                     "S3Bucket": {"Ref":"paramS3Bucket"},
                     "S3Key": {"Ref":"paramS3Key"}
                 },
-                "Handler": "index.handler",
+                "Handler": "main.handler",
                 "Role": {"Fn::GetAtt": ["LambdaCloudwatchRole", "Arn"]},
                 "Runtime": "python2.7",
                 "Description": {
@@ -87,7 +87,7 @@
         "LambdaOutput": {
             "Description": "Lambda Function Name",
             "Value": {"Fn::GetAtt": ["Lambda", "Arn"]}
-        },
+        }
 
     }
 }

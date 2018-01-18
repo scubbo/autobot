@@ -426,7 +426,9 @@
             "Description": "S3 bucket holding all the OutputArtifacts of any pipeline stage",
             "Value": {"Ref": "PipelineBucket"},
             "Export": {
-                "Name": "AutoBot-pipeline-bucket"
+                "Name": {
+                    "Fn::Join" : ["", [{"Ref":"paramProjectName"}, "-pipeline-bucket"]]
+                }
             }
         }
     }
