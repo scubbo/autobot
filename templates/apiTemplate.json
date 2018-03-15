@@ -197,11 +197,6 @@
                     ]
                 },
                 "PathPart": "slack"
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "6db85f27-5dbb-4be9-9ae1-4afbdc858e3c"
-                }
             }
         },
         "SlackRequest": {
@@ -246,11 +241,6 @@
                         "StatusCode": 200
                     }
                 ]
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "afe1fb8d-6faf-41fb-9ddf-dceb34b33f46"
-                }
             },
             "DependsOn": [
                 "LambdaPermission"

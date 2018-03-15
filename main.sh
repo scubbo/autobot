@@ -29,7 +29,7 @@ echo "OK! Working...";
 
 LAMBDA_STACK_NAME=$PROJECT_NAME"-lambda-stack";
 
-TEMP_BUCKET_NAME="temp-"$PROJECT_NAME"-AutoBot-bucket";
+TEMP_BUCKET_NAME="temp-"$PROJECT_NAME"-autobot-bucket";
 aws s3api create-bucket --bucket $TEMP_BUCKET_NAME >/dev/null;
 aws s3 cp lambdas/initial-lambda-code.zip s3://$TEMP_BUCKET_NAME/code.zip >/dev/null;
 aws cloudformation create-stack --stack-name $LAMBDA_STACK_NAME --template-body file://templates/lambdaTemplate.json --parameters ParameterKey=paramProjectName,ParameterValue=$PROJECT_NAME ParameterKey=paramS3Bucket,ParameterValue=$TEMP_BUCKET_NAME ParameterKey=paramS3Key,ParameterValue=code.zip --capabilities CAPABILITY_IAM 2>&1 >/dev/null;
@@ -101,6 +101,17 @@ read -p ">>> " BOT_ACCESS_TOKEN
 aws lambda update-function-configuration --function-name $LAMBDA_ARN --environment "Variables={responseToken=$BOT_ACCESS_TOKEN}" >/dev/null;
 echo "One moment...making the bot's response a little more exciting..."
 aws lambda update-function-code --function-name $LAMBDA_ARN --zip-file fileb://lambdas/slack-initial-bot-code.zip >/dev/null
+
+# Update the APIGateway to call Lambda asynchronously
+# Can't do this in Cloudformation because then we couldn't test based on response
+REST_API_ID=$(aws cloudformation describe-stacks | jq --arg STACK_NAME $API_STACK_NAME -r '.Stacks[] | select(.StackName==$STACK_NAME) | .Outputs[] | select(.Description=="Address") | .OutputValue' | perl -pe 's|https://(.*?)\..*|$1|')
+RESOURCE_ID=$(aws apigateway get-resources --rest-api-id $REST_API_ID | jq -r '.items | .[] | select(.path=="/slack") | .id')
+# Yes, this quintuple quoting is horrendous. If you can come up with a better way, I'd love to hear it! https://stackoverflow.com/a/1250279/1040915
+aws apigateway update-integration --rest-api-id $REST_API_ID --resource-id $RESOURCE_ID --http-method POST --patch-operations=op='add',path='/requestParameters/integration.request.header.X-Amz-Invocation-Type',value='"'"'Event'"'"'
+# After making changes to API Gateway resources, you have to deploy them. I don't know why. I guess it's like "publishing" them?
+# Except, for literally every other AWS resource, changes take effect immediately. But why would anything ever be consistent, where's the fun in that?
+aws apigateway create-deployment --rest-api-id $REST_API_ID --stage-name LATEST
+
 echo 
 echo "OK, go to your Slack workspace, and post a message beginning with \"Hey Bot!\" in any public channel. You should get a response!";
 echo 
