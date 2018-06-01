@@ -212,7 +212,7 @@
                 "Environment": {
                     "ComputeType": "BUILD_GENERAL1_SMALL",
                     "EnvironmentVariables": [],
-                    "Image": "aws/codebuild/python:2.7.12",
+                    "Image": "aws/codebuild/python:3.6.5",
                     "PrivilegedMode": false,
                     "Type": "LINUX_CONTAINER"
                 },

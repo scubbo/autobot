@@ -68,7 +68,7 @@
                 },
                 "Handler": "main.handler",
                 "Role": {"Fn::GetAtt": ["LambdaCloudwatchRole", "Arn"]},
-                "Runtime": "python2.7",
+                "Runtime": "python3.6",
                 "Description": {
                     "Fn::Join": [
                         "",
